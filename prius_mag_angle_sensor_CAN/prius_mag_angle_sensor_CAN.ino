@@ -18,8 +18,9 @@ Encoder_Buffer Encoder1(EncoderCS1);
 
 void setup() {
   
-  while (!Serial);
   Serial.begin(115200); //Serial set to ZSS speed
+    while (!Serial); 
+
   SPI.begin();
 
   //Adafruit setup
@@ -31,7 +32,7 @@ void setup() {
   digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
 
   // start the CAN bus 
-  if (!CAN.begin(500000)) { //start at 500 kbps
+  if (!CAN.begin(500E3)) { //start at 500 kbps
     Serial.println("Starting CAN failed!");
     while (1);
   }
