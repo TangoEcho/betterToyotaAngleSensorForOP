@@ -1,12 +1,13 @@
 #include <Encoder_Buffer.h>
-#include <can.h>
-#include <mcp2515.h>
+#include <CAN.h>
+//#include <can.h>
+//#include <mcp2515.h>
 #include <SPI.h>
 
 //CAN
 struct can_frame canMsg1;
 struct can_frame canMsg2;
-MCP2515 mcp2515(3);
+//MCP2515 mcp2515(3);
 
 //ANGSENSOR
 #define EncoderCS1 10
@@ -18,13 +19,22 @@ Encoder_Buffer Encoder1(EncoderCS1);
 void setup() {
   
   while (!Serial);
-  Serial.begin(115200);
+  Serial.begin(115200); //Serial set to ZSS speed
   SPI.begin();
 
-  //INIT CAN
-  mcp2515.reset();
-  mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ); //8Mhz oscillator
-  mcp2515.setNormalMode();
+  //Adafruit setup
+
+  Serial.println("CAN Sender");
+  pinMode(PIN_CAN_STANDBY, OUTPUT);
+  digitalWrite(PIN_CAN_STANDBY, false); // turn off STANDBY
+  pinMode(PIN_CAN_BOOSTEN, OUTPUT);
+  digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
+
+  // start the CAN bus 
+  if (!CAN.begin(500000)) { //start at 500 kbps
+    Serial.println("Starting CAN failed!");
+    while (1);
+  }
   
   //INIT ANGSENSOR
   Encoder1.initEncoder();
@@ -39,8 +49,8 @@ void loop() {
 
   lastencoder1Reading = encoder1Reading;
 
-  //CAN
-  canMsg1.can_id  = 0x23;
+ //CAN Array Setup
+  canMsg1.can_id = 0x23;
   canMsg1.can_dlc = 8;
   canMsg1.data[0] = (encoder1Reading >> 24) & 0xFF; //Bitshift the ANGSENSOR (Cabana errors with 32 bit)
   canMsg1.data[1] = (encoder1Reading >> 16) & 0xFF;
@@ -51,19 +61,23 @@ void loop() {
   canMsg1.data[6] = (rate >> 0) & 0xFF;
   canMsg1.data[7] = can_cksum (canMsg1.data, 7, 0x230); //Toyota CAN CHECKSUM
 
-  canMsg2.can_id  = 0x220;
-  canMsg2.can_dlc = 8;
-  canMsg2.data[0] = 0x0E;
-  canMsg2.data[1] = 0x00;
-  canMsg2.data[2] = 0x00;
-  canMsg2.data[3] = 0x08;
-  canMsg2.data[4] = 0x01;
-  canMsg2.data[5] = 0x00;
-  canMsg2.data[6] = 0x00;
-  canMsg2.data[7] = 0xA0;
+  //CAN for m4
+  Serial.print("Sending CAN Packet");
 
-  mcp2515.sendMessage(&canMsg1);
-  //mcp2515.sendMessage(&canMsg2); //Only send message 1. Reserve for future use!
+  CAN.beginPacket(0x200, 8); //Start-(id, dlc) https://github.com/adafruit/arduino-CAN/blob/master/API.md
+
+  //Send by line 
+ 
+  CAN.write(canMsg1.data[0]); //0-Array Bit 0
+  CAN.write(canMsg1.data[1]); //1
+  CAN.write(canMsg1.data[2]); //2
+  CAN.write(canMsg1.data[3]); //3
+  CAN.write(canMsg1.data[4]); //4
+  CAN.write(canMsg1.data[5]); //5
+  CAN.write(canMsg1.data[6]); //6
+  CAN.write(canMsg1.data[7]); //7-Array Bit 7
+
+  CAN.endPacket(); //End sequence of sending packget. Returns 1 on success 0 on failure
 
   //Serial.println(canMsg1.data[4]);
   

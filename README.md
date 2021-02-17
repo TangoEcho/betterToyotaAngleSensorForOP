@@ -1,5 +1,10 @@
 # betterToyotaAngleSensorForOP
 
+ZSS modified for Adafruit Feather M4 CAN Board
+https://www.adafruit.com/product/4759
+
+Requires Adafruit CAN.h file to be modified to match mcp2515 can.h
+
 WIP BOM to supplement repo https://docs.google.com/spreadsheets/d/1Pn6zGi96R18uo3hBh6kgpqTcffqMBHuL74cx0rIaKcA/edit?usp=sharing
 
 AS5047P eval board (comes with magnet):
